@@ -15,11 +15,11 @@ router.use(protect);
 
 // Create and get all addresses (Admins see all, others see own)
 router.post("/userAddress", createAddress);
-router.get("/", restrictTo("Admin"), getAddresses);
+router.get("/getAllAddress", getAddresses);
 
 // Get, update, delete specific address (Admins or owners only)
-router.get("/:id", getAddressById);
-router.put("/:id", updateAddress);
+router.get("/getAddress/:id", getAddressById);
+router.put("/putAddress/:id", updateAddress);
 router.delete("/:id", deleteAddress);
 
 export default router;

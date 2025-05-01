@@ -1,13 +1,13 @@
 import mongoose from "mongoose";
 
-const leadSchema = new mongoose.Schema(
+const customerBookingSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    client_name: {
+    customer_name: {
       type: String,
       required: true,
     },
@@ -55,16 +55,14 @@ const leadSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    ownerId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
   },
   {
     timestamps: true,
   }
 );
 
-const Lead = mongoose.model("Lead", leadSchema);
-export default Lead;
+const CustomerBooking = mongoose.model(
+  "CustomerBooking",
+  customerBookingSchema
+);
+export default CustomerBooking;

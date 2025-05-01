@@ -1,14 +1,14 @@
 import mongoose from "mongoose";
-import Lead from "../models/lead.model.js";
+import CustomerBooking from "../models/customerBooking.model.js";
 import User from "../models/user.model.js";
 
-export const createLead = async (req, res, next) => {
+export const createCustomerBooking = async (req, res, next) => {
   try {
     // Handle data wrapper
     const body = req.body.data || req.body;
     const {
       user,
-      client_name,
+      customer_name,
       phone_number,
       lead_status,
       booking_date,
@@ -16,12 +16,11 @@ export const createLead = async (req, res, next) => {
       service_name,
       price,
       notes,
-      owner,
     } = body;
 
     // Validate required fields and identify missing ones
     const requiredFields = {
-      client_name,
+      customer_name,
       phone_number,
       lead_status,
       booking_date,
@@ -71,7 +70,7 @@ export const createLead = async (req, res, next) => {
     const bookingDate = new Date(booking_date);
     if (isNaN(bookingDate.getTime())) {
       res.status(400);
-      throw new Error("Invalid booking date format (e.g., 2025-04-30)");
+      throw new Error("Invalid booking date format (e.g., 2025-05-01)");
     }
 
     // Validate booking_time (format: "HH:mm:ss - HH:mm:ss")
@@ -80,7 +79,7 @@ export const createLead = async (req, res, next) => {
     if (!timeRangeRegex.test(booking_time)) {
       res.status(400);
       throw new Error(
-        "Invalid booking time format (e.g., 14:30:00 - 15:00:00)"
+        "Invalid booking time format (e.g., 16:30:00 - 17:00:00)"
       );
     }
 
@@ -125,34 +124,10 @@ export const createLead = async (req, res, next) => {
       throw new Error("User identifier required");
     }
 
-    // Get ownerId (prefer authenticated user, fallback to provided owner as email or ObjectId)
-    let ownerId = req.user && req.user.id ? req.user.id : null;
-    if (owner) {
-      if (mongoose.Types.ObjectId.isValid(owner)) {
-        const foundOwner = await User.findById(owner);
-        if (!foundOwner) {
-          res.status(404);
-          throw new Error(`Owner with ID ${owner} not found`);
-        }
-        ownerId = foundOwner._id;
-      } else {
-        const foundOwner = await User.findOne({ email: owner });
-        if (!foundOwner) {
-          res.status(404);
-          throw new Error(`Owner with email ${owner} not found`);
-        }
-        ownerId = foundOwner._id;
-      }
-    }
-    if (!ownerId) {
-      res.status(400);
-      throw new Error("Owner identifier required");
-    }
-
-    // Create lead
-    const lead = new Lead({
+    // Create customer booking
+    const customerBooking = new CustomerBooking({
       userId,
-      client_name,
+      customer_name,
       phone_number,
       lead_status,
       booking_date: bookingDate,
@@ -160,71 +135,80 @@ export const createLead = async (req, res, next) => {
       service_name,
       price,
       notes: notes || "",
-      ownerId,
     });
-    await lead.save();
+    await customerBooking.save();
 
-    res.status(201).json({ message: "Lead created successfully", lead });
+    res
+      .status(201)
+      .json({
+        message: "Customer booking created successfully",
+        customerBooking,
+      });
   } catch (err) {
     next(err);
   }
 };
 
-export const getLeads = async (req, res, next) => {
+export const getCustomerBookings = async (req, res, next) => {
   try {
-    // Admins can see all leads, others see only their own (as userId or ownerId)
+    // Admins can see all bookings, others see only their own (as userId)
     const query = req.user.roles.includes("Admin")
       ? {}
-      : { $or: [{ userId: req.user.id }, { ownerId: req.user.id }] };
-    const leads = await Lead.find(query).populate(
-      "userId ownerId",
+      : { userId: req.user.id };
+    const customerBookings = await CustomerBooking.find(query).populate(
+      "userId",
       "email first_name last_name"
     );
 
-    res.json({ message: "Leads retrieved successfully", leads });
+    res.json({
+      message: "Customer bookings retrieved successfully",
+      customerBookings,
+    });
   } catch (err) {
     next(err);
   }
 };
 
-export const getLeadById = async (req, res, next) => {
+export const getCustomerBookingById = async (req, res, next) => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
       res.status(400);
-      throw new Error("Invalid lead ID format");
+      throw new Error("Invalid customer booking ID format");
     }
-    const lead = await Lead.findById(id).populate(
-      "userId ownerId",
+    const customerBooking = await CustomerBooking.findById(id).populate(
+      "userId",
       "email first_name last_name"
     );
-    if (!lead) {
+    if (!customerBooking) {
       res.status(404);
-      throw new Error("Lead not found");
+      throw new Error("Customer booking not found");
     }
 
-    // Ensure user is associated with the lead (as userId or ownerId) or is Admin
+    // Ensure user owns the booking or is Admin
     if (
       !req.user.roles.includes("Admin") &&
-      lead.userId.toString() !== req.user.id &&
-      lead.ownerId.toString() !== req.user.id
+      customerBooking.userId.toString() !== req.user.id
     ) {
       res.status(403);
-      throw new Error("Forbidden - You are not associated with this lead");
+      throw new Error("Forbidden - You do not own this customer booking");
     }
 
-    res.json({ message: "Lead retrieved successfully", lead });
+    res.json({
+      message: "Customer booking retrieved successfully",
+      customerBooking,
+    });
   } catch (err) {
     next(err);
   }
 };
 
-export const updateLead = async (req, res, next) => {
+export const updateCustomerBooking = async (req, res, next) => {
   try {
     // Handle data wrapper
     const body = req.body.data || req.body;
     const {
-      client_name,
+      customer_name,
       phone_number,
       lead_status,
       booking_date,
@@ -232,28 +216,21 @@ export const updateLead = async (req, res, next) => {
       service_name,
       price,
       notes,
-      owner,
     } = body;
 
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400);
-      throw new Error("Invalid lead ID format");
-    }
-    const lead = await Lead.findById(id);
-    if (!lead) {
+    const customerBooking = await CustomerBooking.findById(req.params.id);
+    if (!customerBooking) {
       res.status(404);
-      throw new Error("Lead not found");
+      throw new Error("Customer booking not found");
     }
 
-    // Ensure user is associated with the lead (as userId or ownerId) or is Admin
+    // Ensure user owns the booking or is Admin
     if (
       !req.user.roles.includes("Admin") &&
-      lead.userId.toString() !== req.user.id &&
-      lead.ownerId.toString() !== req.user.id
+      customerBooking.userId.toString() !== req.user.id
     ) {
       res.status(403);
-      throw new Error("Forbidden - You are not associated with this lead");
+      throw new Error("Forbidden - You do not own this customer booking");
     }
 
     // Validate phone_number if provided
@@ -292,9 +269,9 @@ export const updateLead = async (req, res, next) => {
       const bookingDate = new Date(booking_date);
       if (isNaN(bookingDate.getTime())) {
         res.status(400);
-        throw new Error("Invalid booking date format (e.g., 2025-04-30)");
+        throw new Error("Invalid booking date format (e.g., 2025-05-01)");
       }
-      lead.booking_date = bookingDate;
+      customerBooking.booking_date = bookingDate;
     }
 
     // Validate booking_time if provided (format: "HH:mm:ss - HH:mm:ss")
@@ -304,7 +281,7 @@ export const updateLead = async (req, res, next) => {
       if (!timeRangeRegex.test(booking_time)) {
         res.status(400);
         throw new Error(
-          "Invalid booking time format (e.g., 14:30:00 - 15:00:00)"
+          "Invalid booking time format (e.g., 16:30:00 - 17:00:00)"
         );
       }
       const [startTime, endTime] = booking_time.split(" - ").map((time) => {
@@ -315,7 +292,7 @@ export const updateLead = async (req, res, next) => {
         res.status(400);
         throw new Error("Start time must be before end time");
       }
-      lead.booking_time = booking_time;
+      customerBooking.booking_time = booking_time;
     }
 
     // Validate price if provided
@@ -324,70 +301,46 @@ export const updateLead = async (req, res, next) => {
       throw new Error("Price must be a non-negative number");
     }
 
-    // Get ownerId if owner is provided
-    let ownerId;
-    if (owner) {
-      if (mongoose.Types.ObjectId.isValid(owner)) {
-        const foundOwner = await User.findById(owner);
-        if (!foundOwner) {
-          res.status(404);
-          throw new Error(`Owner with ID ${owner} not found`);
-        }
-        ownerId = foundOwner._id;
-      } else {
-        const foundOwner = await User.findOne({ email: owner });
-        if (!foundOwner) {
-          res.status(404);
-          throw new Error(`Owner with email ${owner} not found`);
-        }
-        ownerId = foundOwner._id;
-      }
-    }
-
     // Update fields
-    lead.client_name = client_name || lead.client_name;
-    lead.phone_number = phone_number || lead.phone_number;
-    lead.lead_status = lead_status || lead.lead_status;
-    lead.booking_time = booking_time || lead.booking_time;
-    lead.service_name = service_name || lead.service_name;
-    lead.price = price !== undefined ? price : lead.price;
-    lead.notes = notes !== undefined ? notes : lead.notes;
-    lead.ownerId = ownerId || lead.ownerId;
+    customerBooking.customer_name =
+      customer_name || customerBooking.customer_name;
+    customerBooking.phone_number = phone_number || customerBooking.phone_number;
+    customerBooking.lead_status = lead_status || customerBooking.lead_status;
+    customerBooking.service_name = service_name || customerBooking.service_name;
+    customerBooking.price = price !== undefined ? price : customerBooking.price;
+    customerBooking.notes = notes !== undefined ? notes : customerBooking.notes;
 
-    await lead.save();
+    await customerBooking.save();
 
-    res.json({ message: "Lead updated successfully", lead });
+    res.json({
+      message: "Customer booking updated successfully",
+      customerBooking,
+    });
   } catch (err) {
     next(err);
   }
 };
 
-export const deleteLead = async (req, res, next) => {
+export const deleteCustomerBooking = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400);
-      throw new Error("Invalid lead ID format");
-    }
-    const lead = await Lead.findById(id);
-    if (!lead) {
+    const customerBooking = await CustomerBooking.findById(req.params.id);
+    if (!customerBooking) {
       res.status(404);
-      throw new Error("Lead not found");
+      throw new Error("Customer booking not found");
     }
 
-    // Ensure user is associated with the lead (as userId or ownerId) or is Admin
+    // Ensure user owns the booking or is Admin
     if (
       !req.user.roles.includes("Admin") &&
-      lead.userId.toString() !== req.user.id &&
-      lead.ownerId.toString() !== req.user.id
+      customerBooking.userId.toString() !== req.user.id
     ) {
       res.status(403);
-      throw new Error("Forbidden - You are not associated with this lead");
+      throw new Error("Forbidden - You do not own this customer booking");
     }
 
-    await lead.deleteOne();
+    await customerBooking.deleteOne();
 
-    res.json({ message: "Lead deleted successfully" });
+    res.json({ message: "Customer booking deleted successfully" });
   } catch (err) {
     next(err);
   }

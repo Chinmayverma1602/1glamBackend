@@ -66,7 +66,7 @@ export const createAddress = async (req, res, next) => {
 export const getAddresses = async (req, res, next) => {
   try {
     // Admins can see all addresses, others see only their own
-    const query = req.user.roles.includes("Admin")
+    const query = req.user
       ? {}
       : { userId: req.user.id };
     const addresses = await Address.find(query).populate(

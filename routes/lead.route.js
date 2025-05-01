@@ -15,7 +15,7 @@ router.use(protect);
 
 // Create and get all leads (Admins see all, others see own or owned)
 router.post("/Leads", createLead);
-router.get("/", getLeads);
+router.get("/getLeads", getLeads);
 
 // Get, update, delete specific lead (Admins or associated users only)
 router.get("/:id", getLeadById);

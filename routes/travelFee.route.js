@@ -15,7 +15,7 @@ router.use(protect);
 
 // Create and get all travel fees (Admins see all, others see own)
 router.post("/TravelFees", createTravelFee);
-router.get("/", getTravelFees);
+router.get("/getTravelFees", getTravelFees);
 
 // Get, update, delete specific travel fee (Admins or owners only)
 router.get("/:id", getTravelFeeById);

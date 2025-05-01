@@ -15,7 +15,8 @@ router.use(protect);
 
 // Create and get all businesses (Admins see all, others see own)
 router.post("/userBussiness", createBusiness);
-router.get("/", getBusinesses);
+router.get("/getBusinesses", getBusinesses);
+
 
 // Get, update, delete specific business (Admins or owners only)
 router.get("/:id", getBusinessById);

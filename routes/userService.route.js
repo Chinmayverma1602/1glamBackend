@@ -15,7 +15,7 @@ router.use(protect);
 
 // Create and get all user services (Admins see all, others see own)
 router.post("/userServices", createUserService);
-router.get("/", getUserServices);
+router.get("/getUserServices", getUserServices);
 
 // Get, update, delete specific user service (Admins or owners only)
 router.get("/:id", getUserServiceById);

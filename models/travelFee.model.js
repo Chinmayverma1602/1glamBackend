@@ -9,7 +9,7 @@ const travelFeeSchema = new mongoose.Schema(
     },
     fee_type: {
       type: String,
-      enum: ["per_km", "flat_rate", "per_hour"],
+      enum: ["per_km", "per_mile"],
       required: true,
     },
     fee: {

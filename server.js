@@ -6,6 +6,7 @@ import authRoutes from "./routes/auth.routes.js";
 import addressRoutes from "./routes/address.route.js";
 import businessRoutes from "./routes/business.route.js";
 import travelFeeRoutes from "./routes/travelFee.route.js";
+import userServiceRoutes from "./routes/userService.route.js";
 
 dotenv.config();
 connectDB();
@@ -18,6 +19,7 @@ app.use("/api/resource", authRoutes);
 app.use("/api/resource", addressRoutes);
 app.use("/api/resource", businessRoutes);
 app.use("/api/resource", travelFeeRoutes);
+app.use("/api/resource", userServiceRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

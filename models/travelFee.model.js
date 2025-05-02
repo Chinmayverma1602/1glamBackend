@@ -13,9 +13,10 @@ const travelFeeSchema = new mongoose.Schema(
       required: true,
     },
     fee: {
-      type: Number,
+      type: String,
       required: true,
-      min: 0,
+      enum: ["free", "starts_from", "fixed"],
+
     },
     max_distance: {
       type: Number,

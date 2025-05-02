@@ -13,9 +13,16 @@ const travelFeeSchema = new mongoose.Schema(
       required: true,
     },
     fee: {
-      type: String,
+      type: mongoose.Schema.Types.Mixed,
       required: true,
-      min: 0,
+      validate: {
+        validator: function (value) {
+          if (typeof value === "number") return value >= 0;
+          return ["free", "starts_from", "fixed"].includes(value);
+        },
+        message:
+          "Fee must be a non-negative number or one of: free, starts_from, fixed",
+      },
     },
     max_distance: {
       type: Number,

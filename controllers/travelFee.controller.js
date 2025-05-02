@@ -1,18 +1,18 @@
 import TravelFee from "../models/travelFee.model.js";
 import User from "../models/user.model.js";
 
+const validFeeTypes = ["per_km", "flat_rate", "per_hour"];
+const validFeeStrings = ["free", "starts_from", "fixed"];
+
 export const createTravelFee = async (req, res, next) => {
   try {
     const { user, fee_type, fee, max_distance } = req.body;
 
-    // Validate required fields
     if (!fee_type || fee === undefined || max_distance === undefined) {
       res.status(400);
       throw new Error("Fee type, fee, and max distance are required");
     }
 
-    // Validate fee_type (enum handled by schema, but check for clarity)
-    const validFeeTypes = ["per_km", "flat_rate", "per_hour"];
     if (!validFeeTypes.includes(fee_type)) {
       res.status(400);
       throw new Error(
@@ -20,20 +20,25 @@ export const createTravelFee = async (req, res, next) => {
       );
     }
 
-    // Validate fee and max_distance
-    if (typeof fee !== "number" || fee < 0) {
+    const isFeeValid =
+      (typeof fee === "number" && fee >= 0) ||
+      (typeof fee === "string" && validFeeStrings.includes(fee));
+
+    if (!isFeeValid) {
       res.status(400);
-      throw new Error("Fee must be a non-negative number");
+      throw new Error(
+        "Fee must be a non-negative number or one of: free, starts_from, fixed"
+      );
     }
+
     if (typeof max_distance !== "number" || max_distance < 0) {
       res.status(400);
       throw new Error("Max distance must be a non-negative number");
     }
 
-    // Get userId (prefer authenticated user, fallback to provided user email)
     let userId;
     if (req.user && req.user.id) {
-      userId = req.user.id; // From JWT
+      userId = req.user.id;
     } else if (user) {
       const foundUser = await User.findOne({ email: user });
       if (!foundUser) {
@@ -46,7 +51,6 @@ export const createTravelFee = async (req, res, next) => {
       throw new Error("User identifier required");
     }
 
-    // Create travel fee
     const travelFee = new TravelFee({
       userId,
       fee_type,
@@ -65,10 +69,10 @@ export const createTravelFee = async (req, res, next) => {
 
 export const getTravelFees = async (req, res, next) => {
   try {
-    // Admins can see all travel fees, others see only their own
     const query = req.user.roles.includes("Admin")
       ? {}
       : { userId: req.user.id };
+
     const travelFees = await TravelFee.find(query).populate(
       "userId",
       "email first_name last_name"
@@ -91,7 +95,6 @@ export const getTravelFeeById = async (req, res, next) => {
       throw new Error("Travel fee not found");
     }
 
-    // Ensure user owns the travel fee or is Admin
     if (
       !req.user.roles.includes("Admin") &&
       travelFee.userId.toString() !== req.user.id
@@ -116,7 +119,6 @@ export const updateTravelFee = async (req, res, next) => {
       throw new Error("Travel fee not found");
     }
 
-    // Ensure user owns the travel fee or is Admin
     if (
       !req.user.roles.includes("Admin") &&
       travelFee.userId.toString() !== req.user.id
@@ -125,22 +127,26 @@ export const updateTravelFee = async (req, res, next) => {
       throw new Error("Forbidden - You do not own this travel fee");
     }
 
-    // Validate fee_type if provided
-    if (fee_type) {
-      const validFeeTypes = ["per_km", "flat_rate", "per_hour"];
-      if (!validFeeTypes.includes(fee_type)) {
-        res.status(400);
-        throw new Error(
-          "Invalid fee type. Must be one of: per_km, flat_rate, per_hour"
-        );
-      }
+    if (fee_type && !validFeeTypes.includes(fee_type)) {
+      res.status(400);
+      throw new Error(
+        "Invalid fee type. Must be one of: per_km, flat_rate, per_hour"
+      );
     }
 
-    // Validate fee and max_distance if provided
-    if (fee !== undefined && (typeof fee !== "number" || fee < 0)) {
+    if (
+      fee !== undefined &&
+      !(
+        (typeof fee === "number" && fee >= 0) ||
+        (typeof fee === "string" && validFeeStrings.includes(fee))
+      )
+    ) {
       res.status(400);
-      throw new Error("Fee must be a non-negative number");
+      throw new Error(
+        "Fee must be a non-negative number or one of: free, starts_from, fixed"
+      );
     }
+
     if (
       max_distance !== undefined &&
       (typeof max_distance !== "number" || max_distance < 0)
@@ -149,7 +155,6 @@ export const updateTravelFee = async (req, res, next) => {
       throw new Error("Max distance must be a non-negative number");
     }
 
-    // Update fields
     travelFee.fee_type = fee_type || travelFee.fee_type;
     travelFee.fee = fee !== undefined ? fee : travelFee.fee;
     travelFee.max_distance =
@@ -171,7 +176,6 @@ export const deleteTravelFee = async (req, res, next) => {
       throw new Error("Travel fee not found");
     }
 
-    // Ensure user owns the travel fee or is Admin
     if (
       !req.user.roles.includes("Admin") &&
       travelFee.userId.toString() !== req.user.id

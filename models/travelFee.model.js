@@ -13,7 +13,7 @@ const travelFeeSchema = new mongoose.Schema(
       required: true,
     },
     fee: {
-      type: Number,
+      type: String,
       required: true,
       min: 0,
     },

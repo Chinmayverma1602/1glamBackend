@@ -21,7 +21,7 @@ app.use("/api/resource", addressRoutes);
 app.use("/api/resource", businessRoutes);
 app.use("/api/resource", travelFeeRoutes);
 app.use("/api/resource", userServiceRoutes);
-app.use("/api/resource", leadRoutes);
+app.use('/api/leads', leadRoutes);
 app.use("/api/resource", customerBookingRoutes);
 
 const PORT = process.env.PORT || 5000;

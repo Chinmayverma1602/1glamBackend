@@ -170,18 +170,19 @@ export const createLead = async (req, res, next) => {
   }
 };
 
-export const getLeads = async (req, res, next) => {
+export const getAllLeads = async (req, res, next) => {
   try {
-    // Admins can see all leads, others see only their own (as userId or ownerId)
-    const query = req.user.roles.includes("Admin")
-      ? {}
-      : { $or: [{ userId: req.user.id }, { ownerId: req.user.id }] };
-    const leads = await Lead.find(query).populate(
+    // No filtering by role or ownership — return all leads
+    const leads = await Lead.find().populate(
       "userId ownerId",
       "email first_name last_name"
     );
 
-    res.json({ message: "Leads retrieved successfully", leads });
+    res.status(200).json({
+      message: "Leads retrieved successfully",
+      leads,
+      leadIds: leads.map((lead) => lead._id), // Optional: list of just the IDs
+    });
   } catch (err) {
     next(err);
   }
@@ -203,15 +204,15 @@ export const getLeadById = async (req, res, next) => {
       throw new Error("Lead not found");
     }
 
-    // Ensure user is associated with the lead (as userId or ownerId) or is Admin
-    if (
-      !req.user.roles.includes("Admin") &&
-      lead.userId.toString() !== req.user.id &&
-      lead.ownerId.toString() !== req.user.id
-    ) {
-      res.status(403);
-      throw new Error("Forbidden - You are not associated with this lead");
-    }
+    // // Ensure user is associated with the lead (as userId or ownerId) or is Admin
+    // // if (
+    // //   // !req.user.roles.includes("Admin") &&
+    // //   lead.userId.toString() !== req.user.id &&
+    // //   lead.ownerId.toString() !== req.user.id
+    // // ) {
+    //   res.status(403);
+    //   throw new Error("Forbidden - You are not associated with this lead");
+    // }
 
     res.json({ message: "Lead retrieved successfully", lead });
   } catch (err) {

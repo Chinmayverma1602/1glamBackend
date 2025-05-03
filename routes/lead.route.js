@@ -1,7 +1,7 @@
 import express from "express";
 import {
   createLead,
-  getLeads,
+  getAllLeads,
   getLeadById,
   updateLead,
   deleteLead,
@@ -15,10 +15,10 @@ router.use(protect);
 
 // Create and get all leads (Admins see all, others see own or owned)
 router.post("/Leads", createLead);
-router.get("/getLeads", getLeads);
+router.get("/getAllLeads", getAllLeads);
 
 // Get, update, delete specific lead (Admins or associated users only)
-router.get("/:id", getLeadById);
+router.get("/getLeads/:id", getLeadById);
 router.put("/:id", updateLead);
 router.delete("/:id", deleteLead);
 

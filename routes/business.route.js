@@ -20,7 +20,8 @@ router.param("id", (req, res, next, id) => {
     return res.status(400).json({ error: "Invalid ID format" });
   }
   next();
-});
+}
+);
 
 // ✅ Static routes FIRST
 router.post("/userBusiness", createBusiness);

@@ -152,17 +152,9 @@ export const createCustomerBooking = async (req, res, next) => {
 export const getCustomerBookings = async (req, res, next) => {
   try {
     // Admins can see all bookings, others see only their own (as userId)
-    let query = {};
-    
-    if (!req.user.roles.includes("Admin")) {
-      // Check if user ID is valid MongoDB ObjectId
-      if (!mongoose.Types.ObjectId.isValid(req.user.id)) {
-        res.status(400);
-        throw new Error("Invalid ID format");
-      }
-      query = { userId: req.user.id };
-    }
-    
+    const query = req.user.roles.includes("Admin")
+      ? {}
+      : { userId: req.user.id };
     const customerBookings = await CustomerBooking.find(query).populate(
       "userId",
       "email first_name last_name"

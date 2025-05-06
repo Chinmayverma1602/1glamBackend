@@ -22,7 +22,7 @@ app.use("/api/resource", businessRoutes);
 app.use("/api/resource", travelFeeRoutes);
 app.use("/api/resource", userServiceRoutes);
 app.use('/api/leads', leadRoutes);
-app.use("/api/resource", customerBookingRoutes);
+app.use("/api/bookings", customerBookingRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
